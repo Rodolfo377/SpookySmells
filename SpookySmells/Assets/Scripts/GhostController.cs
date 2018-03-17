@@ -28,23 +28,32 @@ public class GhostController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (Input.GetButtonDown("w"))
+        if (GameManager.instance.currentGameState == GameState.inGame)
         {
-            Jump();
-        }
-        if(Input.GetButton("d"))
-        {
-            if (rigidBody.velocity.x < runningSpeed)
+            if (Input.GetButtonDown("w"))
             {
-                WalkRight();
+                Jump();
             }
-        }
-        if(Input.GetButton("a"))
-        {
-            if (rigidBody.velocity.x > -runningSpeed)
+            if (Input.GetButton("d"))
             {
-                Debug.Log("Pressed A!");
-                WalkLeft();
+                if (rigidBody.velocity.x < runningSpeed)
+                {
+                    Debug.Log("Pressed D!");
+                    WalkRight();
+                }
+            }
+            if (Input.GetButton("a"))
+            {
+                if (rigidBody.velocity.x > -runningSpeed)
+                {
+                    Debug.Log("Pressed A!");
+                    WalkLeft();
+                }
+            }
+            if (Input.GetButtonDown("m"))
+            {
+                Debug.Log("Menu...");
+                GameManager.instance.SetGameState(GameState.menu);
             }
         }
     }
@@ -55,11 +64,10 @@ public class GhostController : MonoBehaviour
     }
     void WalkRight()
     {
-        rigidBody.AddForce(Vector2.right*runningSpeed, ForceMode2D.Impulse);
+        rigidBody.AddForce(Vector2.right * runningSpeed, ForceMode2D.Impulse);
     }
     void WalkLeft()
     {
-        Debug.Log("Walking Left...");
         rigidBody.AddForce(Vector2.left * runningSpeed, ForceMode2D.Impulse);
     }
     void Crouch()
