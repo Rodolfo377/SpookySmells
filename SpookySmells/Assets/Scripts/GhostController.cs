@@ -10,7 +10,7 @@ public class GhostController : MonoBehaviour
     // Use this for initialization
     private void Awake()
     {
-        Debug.Log("Hello!");
+ 
         rigidBody = GetComponent<Rigidbody2D>();
     }
  //   void Start () {
@@ -38,7 +38,7 @@ public class GhostController : MonoBehaviour
             {
                 if (rigidBody.velocity.x < runningSpeed)
                 {
-                    Debug.Log("Pressed D!");
+                  
                     WalkRight();
                 }
             }
@@ -46,7 +46,7 @@ public class GhostController : MonoBehaviour
             {
                 if (rigidBody.velocity.x > -runningSpeed)
                 {
-                    Debug.Log("Pressed A!");
+                    
                     WalkLeft();
                 }
             }
