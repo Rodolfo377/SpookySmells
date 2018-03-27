@@ -16,13 +16,14 @@ using UnityEngine;
 public class VehicleController : MonoBehaviour {
 
     public float Speed;
-    int nRadials = 16;
+    int nRadials = 8;
     public float detectionDistance = 10.0f;
     public int RadialScale = 1;
     public float maxSpeed = 5.0f;
-
-
-
+    public float DangerFactor = 1.0f;
+    public float TargetInterestFactor = 1.0f;
+    public int DirectionChoices = 3;
+    public int optimalSlot = 0;
     // Use this for initialization
     Rigidbody carRigidBody;
 
@@ -34,6 +35,7 @@ public class VehicleController : MonoBehaviour {
 
     Vector3[] InterestRadials;
     Vector3[] DangerRadials;
+    float[] copiedMags = new float[16];
 
     Vector3 carForward;
    
@@ -54,11 +56,9 @@ public class VehicleController : MonoBehaviour {
 
         Debug.Log("Radial Step = " +RadialStep);
        
-        InterestRadials = new[] {new Vector3(), new Vector3() , new Vector3() , new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(),
-        new Vector3(), new Vector3() , new Vector3() , new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3()};
+        InterestRadials = new[] {new Vector3(), new Vector3() , new Vector3() , new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3()};
 
-        DangerRadials = new[] { new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(),
-        new Vector3(), new Vector3() , new Vector3() , new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3()};
+        DangerRadials = new[] { new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3()};
 
         Targets = GameObject.FindGameObjectsWithTag("Target");
         Obstacles = GameObject.FindGameObjectsWithTag("Obstacle");
@@ -73,14 +73,15 @@ public class VehicleController : MonoBehaviour {
         FirstStep();
 
         ///2) Scan for objects nearby
-       
+
 
 
 
         ///4) Create Interest Map
-        InterestMap();
-        //InterestDangerMap();
         DangerMap();
+        InterestMap();
+        
+        
         
 
     }
@@ -96,7 +97,7 @@ public class VehicleController : MonoBehaviour {
         //Debug purposes - check if radials are evenly spread
         float resultAngle = GetAngle(InterestRadials[0], InterestRadials[1]);
 
-        Debug.Log("Angle = " + resultAngle);
+        //Debug.Log("Angle = " + resultAngle);
         //Debug.Log("MyAngle = " + GetAngle(InterestRadials[1], InterestRadials[2]));
     }
 
@@ -108,7 +109,7 @@ public class VehicleController : MonoBehaviour {
         {
             Vector3 v = Targets[obj].transform.position - carRigidBody.transform.position;
             //Check only targets within detection distance
-            if (v.magnitude <= detectionDistance)
+            if (v.magnitude <= detectionDistance*3)
             {
 
 
@@ -124,13 +125,22 @@ public class VehicleController : MonoBehaviour {
                     {
 
                         //cap interest strength if too close
-                        if (v.magnitude < RadialScale)
-                        {
-                            interestStrength = RadialScale;
-                        }
-                        else
-                        {
+                        //if (v.magnitude < RadialScale)
+                        //{
+                        //    interestStrength = RadialScale;
+                        //}
+                       
+                          
+
                             interestStrength = RadialScale / v.magnitude;
+                            //Debug.Log("angleIterator: " + angleIterator + " interestStrength: " + interestStrength);
+                        
+                        //Check value for danger map equivalent radial
+                        if (DangerRadials[angleIterator].magnitude > RadialScale)
+                        {
+                                Debug.Log("Lowering interest in " + angleIterator + " direction...");
+                                //interestStrength /= 2;
+                            
                         }
 
                         //The higher the interest strength, the longer that radial vector becomes.
@@ -145,7 +155,7 @@ public class VehicleController : MonoBehaviour {
     void DangerMap()
     {
         float dangerStrength = 0.0f;
-        //get targets
+        //get obstacles
         for (int obj = 0; obj < Obstacles.Length; obj++)
         {
 
@@ -155,30 +165,39 @@ public class VehicleController : MonoBehaviour {
             {
 
 
-                //The closer the targer is, the higher the interest strength for that direction
+                //The closer the target is, the higher the interest strength for that direction
 
                 //compare angle between each of the radials and the Target-Vehicle vector. 
                 for (int angleIterator = 0; angleIterator < nRadials; angleIterator++)
                 {
-                    float interestAngle = Mathf.Abs(GetAngle(v, DangerRadials[angleIterator]));
-
-                    //Assign interest strength to the closest angle. 
-                    if (interestAngle < RadialStep / 2)
-                    {
-
-                        //cap interest strength if too close
-                        if (v.magnitude < RadialScale)
+                                   
+                    
+                    //only check for obstacles in front of the vehicle
+                    float forwardAngle = Mathf.Abs(GetAngle(v, carForward));
+                    
+                        //Debug.Log("Obstacle angle: " + forwardAngle);
+                        float interestAngle = Mathf.Abs(GetAngle(v, DangerRadials[angleIterator]));
+                        //Assign interest strength to the closest angle. 
+                        if (interestAngle < RadialStep / 2)
                         {
-                            dangerStrength = RadialScale;
-                        }
-                        else
-                        {
-                            dangerStrength = RadialScale / v.magnitude;
-                        }
+                            //cap interest strength if too close
+                            if (v.magnitude < RadialScale)
+                            {
+                                dangerStrength = RadialScale;
+                            }
+                            else
+                            {
+                                
+                                dangerStrength = RadialScale / v.magnitude;
+                                dangerStrength = Mathf.Cos(interestAngle*Mathf.Deg2Rad) * dangerStrength;
+                                //Debug.Log("angleIterator: "+angleIterator+" dangerStrength: " + dangerStrength);
+                            }
 
-                        //The higher the interest strength, the longer that radial vector becomes.
-                        DangerRadials[angleIterator] *= (1 + dangerStrength);
-                    }
+                            //The higher the interest strength, the longer that radial vector becomes.
+                            DangerRadials[angleIterator] *= (1 + dangerStrength);
+                            //Debug.Log("DR[14] = " + DangerRadials[14].magnitude + " DR[15] = " + DangerRadials[15].magnitude);
+                        }
+                    
                 }
 
             }
@@ -191,7 +210,7 @@ public class VehicleController : MonoBehaviour {
         for (int target = 0; target < Targets.Length; target++)
         {
             Vector3 targetPos = Targets[target].transform.position;
-            Debug.Log("targetPos = "+targetPos);
+            //Debug.Log("targetPos = "+targetPos);
             Gizmos.DrawLine(carRigidBody.transform.position, targetPos);
         }
 
@@ -202,13 +221,13 @@ public class VehicleController : MonoBehaviour {
             Vector3 obstaclePos = Obstacles[obstacle].transform.position;
             Gizmos.DrawLine(carRigidBody.transform.position, Obstacles[obstacle].transform.position);
         }
-        Debug.Log("DrawGizmos...");
+        // Debug.Log("DrawGizmos...");
 
 
 
         //Draw Interest Radials
         for (int i = 0; i < nRadials; i++)
-        {            
+        {
             Gizmos.color = Color.blue;
             Gizmos.DrawLine(carRigidBody.transform.position, carRigidBody.transform.position + InterestRadials[i]);
         }
@@ -254,13 +273,26 @@ public class VehicleController : MonoBehaviour {
 
     void Movement()
     {
+        
+        Vector3 newVelocity;
 
-        Vector3 seekDir = DiscreteSeek();
+        //For imminent collisions, implement flee behaviour.
+        //Vector3 seekDir = DiscreteSeek();
         Vector3 fleeDir = DiscreteFlee();
-
-
-
-        carRigidBody.velocity = Truncate(seekDir + fleeDir, maxSpeed);
+        //if (fleeDir.magnitude > 1.5f)
+        //{
+        //    Debug.Log("Flee!");
+        //    newVelocity = fleeDir;
+        //}
+        ////Otherwise, proceed with context steering
+        //else
+        {
+            newVelocity = ProcessMaps();           
+        }
+        newVelocity = newVelocity.normalized * Speed;
+        newVelocity = Truncate(newVelocity, maxForce);
+        carRigidBody.velocity = newVelocity / carRigidBody.mass;
+        //carRigidBody.velocity = Truncate(seekDir + fleeDir, maxSpeed);
         carRigidBody.position += carRigidBody.velocity * Time.deltaTime;
 
         //Loop though all Obstacle Radials
@@ -297,7 +329,7 @@ public class VehicleController : MonoBehaviour {
         Vector3 steering = desiredVelocity - carRigidBody.velocity;
 
         //Truncate steering to max Force
-        steering = Truncate(steering, maxForce);
+        //steering = Truncate(steering, maxForce);
 
         steering = steering / carRigidBody.mass;
 
@@ -313,13 +345,13 @@ public class VehicleController : MonoBehaviour {
         desiredVelocity = desiredVelocity.normalized * Speed;
 
         Vector3 flee = desiredVelocity - carRigidBody.velocity;
-        flee = Truncate(flee, maxForce);
+        //flee = Truncate(flee, maxForce);
         flee = flee / carRigidBody.mass;
 
         return flee;
     }
 
-    //returns the direction of the higher interest, normalized
+    //returns the direction of the higher interest
     Vector3 DiscreteSeek()
     {
         float greatestInterest = 0.0f;
@@ -339,15 +371,15 @@ public class VehicleController : MonoBehaviour {
             return new Vector3();
         }
 
-        Vector3 seekVelocity = InterestRadials[radialId].normalized * Speed;
-        seekVelocity = Truncate(seekVelocity, maxForce);
-        seekVelocity /= carRigidBody.mass;
+        Vector3 seekVelocity = InterestRadials[radialId];
+        
 
         return seekVelocity;
         
         //
     }
 
+    //Choose direction that has the greatest danger strength
     Vector3 DiscreteFlee()
     {
         float greatestDanger = 0.0f;
@@ -372,8 +404,21 @@ public class VehicleController : MonoBehaviour {
         fleeVelocity /= carRigidBody.mass;
 
         //Because it is AVOIDING that direction, right?
-        fleeVelocity *= -1;
+        //fleeVelocity *= -1;
 
+        //rotating a v1(x1, y1) some 'alfa; degrees yields =  v2(x2, y2)
+        //x2 = x1*cos(alfa) - y1*sin(alfa)
+        //y2 = x1*sin(alfa) + y1*cos(alfa)
+
+        //Alfa == the rotation at each iteration, which will be evenly spaced around the circle.
+        //Debug.Log("RadialStep in degrees" + RadialStep*i + " Radians = "+ RadialStep * Mathf.Deg2Rad * i);
+        //carForward.Normalize();
+       // float alfa = RadialStep * Mathf.Deg2Rad * i;
+
+
+        
+        //fleeVelocity.
+        
         return fleeVelocity;
     }
 
@@ -410,5 +455,83 @@ public class VehicleController : MonoBehaviour {
         
 
         return angle;
+    }
+    Vector3 ProcessMaps()
+    {
+        int [] bestSlots = new int[3];
+        
+        //represents the greatest value of interest (element inside copiedmags) at that iteration
+        float interestKey = 0;
+        //id of the slot which contains the greatest value of the copiedmags array at that iteration
+        int slotKey = 0;
+
+        //out of the preselected slots, indicates the value of lowest danger among them.
+        float lowestDanger = 0;
+        //id of the slot that is among the 3 most interesting areas with the lowest danger
+        optimalSlot = 0;
+
+        //copy magnitudes into array of floats
+        for (int mag = 0; mag < nRadials; mag++)
+        {
+            copiedMags[mag] = InterestRadials[mag].magnitude;
+            //Debug.Log("copiedMags[" + mag + "]" + copiedMags[mag]);
+        }
+
+        //Gather the n greatest directions based on input
+        for (int choice = 0; choice < DirectionChoices; choice++)
+        {       
+            //Look for 3 slots with highest interest
+            for (int slot = 0; slot < nRadials; slot++)
+            {
+                //select 3 greatest interests
+                //get greatest interest
+                if (copiedMags[slot] > interestKey)
+                {
+                    slotKey = slot;
+                    interestKey = copiedMags[slot];
+                }            
+           
+            }
+                interestKey = 0;
+                bestSlots[choice] = slotKey;
+                copiedMags[slotKey] = 0;
+
+            
+        }
+
+        //Debug.Log("bestSlots[0] = " + bestSlots[0]+ " bestSlots[1] = " + bestSlots[1] + " bestSlots[2] = " + bestSlots[2]);
+       
+
+        //Debug.Log("Direction Choices: " + DirectionChoices);
+        //select the slot that has the lowest danger
+        for (int dangerSlot = 0; dangerSlot < DirectionChoices; dangerSlot++)
+        {
+            if (dangerSlot == 0)
+            {
+                //Debug.Log("lowest danger is initialized!");
+                lowestDanger = DangerRadials[bestSlots[dangerSlot]].magnitude;
+                optimalSlot = bestSlots[dangerSlot];
+            }
+            else if(dangerSlot > 0)
+            {
+                //Debug.Log("initial slot: "+ bestSlots[0] +" lowestDanger: " + lowestDanger + " current index: " + bestSlots[dangerSlot] + " current value: "+ DangerRadials[bestSlots[dangerSlot]].magnitude );
+                if (DangerRadials[bestSlots[dangerSlot]].magnitude < lowestDanger)
+                {
+                    
+                    lowestDanger = DangerRadials[bestSlots[dangerSlot]].magnitude;
+                    optimalSlot = bestSlots[dangerSlot];
+                    //Debug.Log("*****optimal slot updated!" + optimalSlot);
+                }
+            }
+        }
+
+        //Debug.Log("*****optimal slot: "+optimalSlot);
+        //Debug.Log("optimal slot: " + optimalSlot + " lowest danger: "+lowestDanger + " // 0: "+ DangerRadials[bestSlots[0]].magnitude + " // 1: "+ DangerRadials[bestSlots[1]].magnitude + " // 2: " + DangerRadials[bestSlots[2]].magnitude);
+        //debugging purposes
+        
+
+        return InterestRadials[optimalSlot];   
+
+
     }
 }
