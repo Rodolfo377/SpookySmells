@@ -12,6 +12,7 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
     public GameState currentGameState;
+    public bool GhostDiscovered;
 
     private void Awake()
     {
@@ -28,6 +29,10 @@ public class GameManager : MonoBehaviour
         {
             StartGame();
         }
+        if(GhostDiscovered)
+        {
+            SetGameState(GameState.gameOver);
+        }
     }
     void StartGame ()
     {
@@ -37,7 +42,7 @@ public class GameManager : MonoBehaviour
 
     void GameOver ()
     {
-        
+        Debug.Log("PERDEU PLAYBOY");
     }
 
     void BackToMenu()
@@ -57,7 +62,7 @@ public class GameManager : MonoBehaviour
         }
         else if (newgameState == GameState.gameOver)
         {
-
+            GameOver();
         }
 
         currentGameState = newgameState;

@@ -12,7 +12,8 @@ public class FieldOfView : MonoBehaviour
     private Rigidbody2D aiRigidBody;
     //public LayerMask playerMask; -- testing out without a layer for the player, maybe just the Player Tag will be enough...
     public int obstacleMask = 1 << 8;
-    public bool playerVisible;
+    
+    
     public Transform ghostPos;
     public List<Transform> visibleTargets;
 
@@ -20,7 +21,7 @@ public class FieldOfView : MonoBehaviour
     {
         aiRigidBody = GetComponent<Rigidbody2D>();
         Debug.Log("Field of view Awake!");
-        playerVisible = false;
+    
         StartCoroutine("FindTargetWithDelay", .2f);
     }
 
@@ -36,7 +37,7 @@ public class FieldOfView : MonoBehaviour
     public void FindVisibleTargets()//Try to find player
     {
         visibleTargets.Clear();
-        playerVisible = false;
+      
         GameObject[] Ghosts = GameObject.FindGameObjectsWithTag("Player");
        for(int i = 0; i < Ghosts.Length; i++)
         {
@@ -74,6 +75,7 @@ public class FieldOfView : MonoBehaviour
                     else if(hit.collider.name == "Player")
                     {
                         Debug.Log("Oh no! Ghost was seen!");
+                        GameManager.instance.GhostDiscovered = true;
                     }
 
                     //else

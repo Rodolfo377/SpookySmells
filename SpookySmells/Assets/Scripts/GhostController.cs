@@ -7,11 +7,13 @@ public class GhostController : MonoBehaviour
     public float jumpForce = 200.0f;
     public float runningSpeed = 3.0f;
     private Rigidbody2D rigidBody;
+    
     // Use this for initialization
     private void Awake()
     {
  
         rigidBody = GetComponent<Rigidbody2D>();
+        
     }
  //   void Start () {
         
