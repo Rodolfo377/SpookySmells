@@ -7,13 +7,15 @@ public class GhostController : MonoBehaviour
     public float jumpForce = 200.0f;
     public float runningSpeed = 3.0f;
     private Rigidbody2D rigidBody;
-    
+    public float fartDuration = 3.0f;
+    private float fartTimer;
+    public bool IsFarting;
     // Use this for initialization
     private void Awake()
     {
  
         rigidBody = GetComponent<Rigidbody2D>();
-        
+        IsFarting = false;
     }
  //   void Start () {
         
@@ -23,9 +25,26 @@ public class GhostController : MonoBehaviour
     // Update is called once per frame
     void Update ()
     {
-          
+        if (GameManager.instance.currentGameState == GameState.inGame)
+        {
+            if (Input.GetButtonDown("Fart"))
+            {
+                //Commence farting
+                if (!IsFarting)
+                {
+                    IsFarting = true;
+                    fartTimer = fartDuration;
+                    //TODO: PLAY FARTING SOUND
+                }
+            }
 
+            //While is farting, spawn particle effects at the player's current position
+            if (IsFarting)
+            {
+                Fart();
+            }
 
+        }
     }
 
     private void FixedUpdate()
@@ -57,6 +76,7 @@ public class GhostController : MonoBehaviour
                 Debug.Log("Menu...");
                 GameManager.instance.SetGameState(GameState.menu);
             }
+            
         }
     }
 
@@ -75,5 +95,18 @@ public class GhostController : MonoBehaviour
     void Crouch()
     {
 
+    }
+
+    void Fart()
+    {
+        fartTimer -= Time.deltaTime;
+        //TODO: SPAWN PARTICLE EFFECTS
+        Debug.Log("Releasing FART!");
+
+        if(fartTimer < 0)
+        {
+            Debug.Log("Finish farting");
+            IsFarting = false;
+        }
     }
 }
