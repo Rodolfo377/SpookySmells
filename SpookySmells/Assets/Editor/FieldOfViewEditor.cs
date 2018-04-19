@@ -19,7 +19,7 @@ public class FieldOfViewEditor : Editor {
         Handles.DrawLine(fow.transform.position, fow.transform.position +  viewAngleB* fow.viewRadius);
         Handles.color = Color.red;
         
-        Debug.Log("Does this thing even work");
+        //Debug.Log("Does this thing even work");
         foreach(Transform shit in fow.visibleTargets)
         {
             Debug.Log("Drawing...");

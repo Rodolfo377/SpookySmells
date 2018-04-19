@@ -16,6 +16,7 @@ using UnityEngine;
 public class VehicleController : MonoBehaviour {
 
     public float Speed;
+    //int nRadials = 16;
     int nRadials = 8;
     public float detectionDistance = 10.0f;
     public int RadialScale = 1;
@@ -49,16 +50,20 @@ public class VehicleController : MonoBehaviour {
     {
 
         carRigidBody = GetComponent<Rigidbody>();
-        
-        
-        
+
+        //InterestRadials = new[] {new Vector3(), new Vector3() , new Vector3() , new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(),
+        //new Vector3(), new Vector3() , new Vector3() , new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3()};
+
+        //DangerRadials = new[] { new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(),
+        //new Vector3(), new Vector3() , new Vector3() , new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3()};
+
         RadialStep = 360.0f / nRadials;
 
         Debug.Log("Radial Step = " +RadialStep);
-       
-        InterestRadials = new[] {new Vector3(), new Vector3() , new Vector3() , new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3()};
 
-        DangerRadials = new[] { new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3()};
+        InterestRadials = new[] { new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3() };
+
+        DangerRadials = new[] { new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3(), new Vector3() };
 
         Targets = GameObject.FindGameObjectsWithTag("Target");
         Obstacles = GameObject.FindGameObjectsWithTag("Obstacle");
@@ -111,9 +116,7 @@ public class VehicleController : MonoBehaviour {
             //Check only targets within detection distance
             if (v.magnitude <= detectionDistance*3)
             {
-
-
-                //The closer the targer is, the higher the interest strength for that direction
+                //The closer the target is, the higher the interest strength for that direction
 
                 //compare angle between each of the radials and the Target-Vehicle vector. 
                 for (int angleIterator = 0; angleIterator < nRadials; angleIterator++)
@@ -124,15 +127,7 @@ public class VehicleController : MonoBehaviour {
                     if (interestAngle < RadialStep / 2)
                     {
 
-                        //cap interest strength if too close
-                        //if (v.magnitude < RadialScale)
-                        //{
-                        //    interestStrength = RadialScale;
-                        //}
-                       
-                          
-
-                            interestStrength = RadialScale / v.magnitude;
+                        interestStrength = RadialScale / v.magnitude;
                             //Debug.Log("angleIterator: " + angleIterator + " interestStrength: " + interestStrength);
                         
                         //Check value for danger map equivalent radial
@@ -173,8 +168,10 @@ public class VehicleController : MonoBehaviour {
                                    
                     
                     //only check for obstacles in front of the vehicle
-                    float forwardAngle = Mathf.Abs(GetAngle(v, carForward));
                     
+                    float forwardAngle = Mathf.Abs(GetAngle(v, carForward));
+                    if (forwardAngle < 45)
+                    {
                         //Debug.Log("Obstacle angle: " + forwardAngle);
                         float interestAngle = Mathf.Abs(GetAngle(v, DangerRadials[angleIterator]));
                         //Assign interest strength to the closest angle. 
@@ -187,9 +184,9 @@ public class VehicleController : MonoBehaviour {
                             }
                             else
                             {
-                                
+
                                 dangerStrength = RadialScale / v.magnitude;
-                                dangerStrength = Mathf.Cos(interestAngle*Mathf.Deg2Rad) * dangerStrength;
+                                dangerStrength = Mathf.Cos(interestAngle * Mathf.Deg2Rad) * dangerStrength;
                                 //Debug.Log("angleIterator: "+angleIterator+" dangerStrength: " + dangerStrength);
                             }
 
@@ -197,7 +194,7 @@ public class VehicleController : MonoBehaviour {
                             DangerRadials[angleIterator] *= (1 + dangerStrength);
                             //Debug.Log("DR[14] = " + DangerRadials[14].magnitude + " DR[15] = " + DangerRadials[15].magnitude);
                         }
-                    
+                    }
                 }
 
             }
@@ -221,10 +218,7 @@ public class VehicleController : MonoBehaviour {
             Vector3 obstaclePos = Obstacles[obstacle].transform.position;
             Gizmos.DrawLine(carRigidBody.transform.position, Obstacles[obstacle].transform.position);
         }
-        // Debug.Log("DrawGizmos...");
-
-
-
+        
         //Draw Interest Radials
         for (int i = 0; i < nRadials; i++)
         {
@@ -271,28 +265,29 @@ public class VehicleController : MonoBehaviour {
         
     }
 
+    //Called by FixedUpdate()
     void Movement()
     {
-        
-        Vector3 newVelocity;
+
+
 
         //For imminent collisions, implement flee behaviour.
         //Vector3 seekDir = DiscreteSeek();
-        Vector3 fleeDir = DiscreteFlee();
-        //if (fleeDir.magnitude > 1.5f)
+        //Vector3 fleeDir = DiscreteFlee();
+        //if (fleeDir.magnitude > 1)
         //{
         //    Debug.Log("Flee!");
         //    newVelocity = fleeDir;
         //}
         ////Otherwise, proceed with context steering
-        //else
-        {
-            newVelocity = ProcessMaps();           
-        }
+
+        Vector3 newVelocity;
+
+        newVelocity = ProcessMaps();                   
         newVelocity = newVelocity.normalized * Speed;
         newVelocity = Truncate(newVelocity, maxForce);
+
         carRigidBody.velocity = newVelocity / carRigidBody.mass;
-        //carRigidBody.velocity = Truncate(seekDir + fleeDir, maxSpeed);
         carRigidBody.position += carRigidBody.velocity * Time.deltaTime;
 
         //Loop though all Obstacle Radials
@@ -399,9 +394,8 @@ public class VehicleController : MonoBehaviour {
             return new Vector3();
         }
 
-        Vector3 fleeVelocity = DangerRadials[radialId].normalized*Speed;
-        fleeVelocity = Truncate(fleeVelocity, maxForce);
-        fleeVelocity /= carRigidBody.mass;
+        Vector3 fleeVelocity = DangerRadials[radialId];
+        
 
         //Because it is AVOIDING that direction, right?
         //fleeVelocity *= -1;
@@ -413,12 +407,14 @@ public class VehicleController : MonoBehaviour {
         //Alfa == the rotation at each iteration, which will be evenly spaced around the circle.
         //Debug.Log("RadialStep in degrees" + RadialStep*i + " Radians = "+ RadialStep * Mathf.Deg2Rad * i);
         //carForward.Normalize();
-       // float alfa = RadialStep * Mathf.Deg2Rad * i;
+        float alfa = -90 * Mathf.Deg2Rad;
+        fleeVelocity.x = fleeVelocity.x * Mathf.Cos(alfa) - fleeVelocity.y*Mathf.Sin(alfa);
+        fleeVelocity.y = fleeVelocity.x * Mathf.Sin(alfa) - fleeVelocity.y * Mathf.Cos(alfa);
 
+        Debug.Log("Length of flee: " + fleeVelocity.magnitude);
 
-        
         //fleeVelocity.
-        
+
         return fleeVelocity;
     }
 
@@ -483,8 +479,7 @@ public class VehicleController : MonoBehaviour {
             //Look for 3 slots with highest interest
             for (int slot = 0; slot < nRadials; slot++)
             {
-                //select 3 greatest interests
-                //get greatest interest
+                                //get greatest interest
                 if (copiedMags[slot] > interestKey)
                 {
                     slotKey = slot;
@@ -494,15 +489,9 @@ public class VehicleController : MonoBehaviour {
             }
                 interestKey = 0;
                 bestSlots[choice] = slotKey;
-                copiedMags[slotKey] = 0;
-
-            
+                copiedMags[slotKey] = 0;            
         }
 
-        //Debug.Log("bestSlots[0] = " + bestSlots[0]+ " bestSlots[1] = " + bestSlots[1] + " bestSlots[2] = " + bestSlots[2]);
-       
-
-        //Debug.Log("Direction Choices: " + DirectionChoices);
         //select the slot that has the lowest danger
         for (int dangerSlot = 0; dangerSlot < DirectionChoices; dangerSlot++)
         {
@@ -523,11 +512,7 @@ public class VehicleController : MonoBehaviour {
                     //Debug.Log("*****optimal slot updated!" + optimalSlot);
                 }
             }
-        }
-
-        //Debug.Log("*****optimal slot: "+optimalSlot);
-        //Debug.Log("optimal slot: " + optimalSlot + " lowest danger: "+lowestDanger + " // 0: "+ DangerRadials[bestSlots[0]].magnitude + " // 1: "+ DangerRadials[bestSlots[1]].magnitude + " // 2: " + DangerRadials[bestSlots[2]].magnitude);
-        //debugging purposes
+        }      
         
 
         return InterestRadials[optimalSlot];   
