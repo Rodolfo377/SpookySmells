@@ -6,15 +6,21 @@ public class GhostController : MonoBehaviour
 {
     public float jumpForce = 200.0f;
     public float runningSpeed = 3.0f;
-    private Rigidbody2D rigidBody;
+    
     public float fartDuration = 3.0f;
-    private float fartTimer;
+    
     public bool IsFarting;
+
+    private float fartTimer;
+    private Rigidbody2D rigidBody;
+    private TrailRendererWithCollider trailCollider;
     // Use this for initialization
     private void Awake()
     {
  
         rigidBody = GetComponent<Rigidbody2D>();
+        trailCollider = GetComponent<TrailRendererWithCollider>();
+        trailCollider.enabled = false;
         IsFarting = false;
     }
  //   void Start () {
@@ -34,6 +40,9 @@ public class GhostController : MonoBehaviour
                 {
                     IsFarting = true;
                     fartTimer = fartDuration;
+                    trailCollider.enabled = true;
+                    trailCollider.stop = false;
+                    // trailCollider.pausing = false;
                     //TODO: PLAY FARTING SOUND
                 }
             }
@@ -103,10 +112,16 @@ public class GhostController : MonoBehaviour
         //TODO: SPAWN PARTICLE EFFECTS
         Debug.Log("Releasing FART!");
 
+
+
         if(fartTimer < 0)
         {
             Debug.Log("Finish farting");
             IsFarting = false;
+            trailCollider.stop = true;
+            //trailCollider.enabled = false;
+            //trailCollider.pausing = true;
+
         }
     }
 }

@@ -6,17 +6,21 @@ public enum GameState
 {
     menu,
     inGame,
-    gameOver
+    gameOver,
+    win
 }
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
     public GameState currentGameState;
     public bool GhostDiscovered;
+    public int numberOfHits;
+    //List<AIController> activeNPCs;
 
     private void Awake()
     {
         instance = this;
+       
     }
     void Start()
     {
@@ -25,7 +29,17 @@ public class GameManager : MonoBehaviour
     }
     private void Update()
     {
-        if(Input.GetButtonDown("g"))
+        //activeNPCs.Clear();
+
+        GameObject[] NPCs = GameObject.FindGameObjectsWithTag("NPC");
+
+        if(NPCs.Length == 0)
+        {
+            Debug.Log("YOU WIN");
+            SetGameState(GameState.win);
+        }
+        
+        if (Input.GetButtonDown("g"))
         {
             StartGame();
         }
@@ -33,6 +47,10 @@ public class GameManager : MonoBehaviour
         {
             SetGameState(GameState.gameOver);
         }
+
+     
+       
+        
     }
     void StartGame ()
     {

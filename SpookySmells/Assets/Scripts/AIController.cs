@@ -6,6 +6,7 @@ public class AIController : MonoBehaviour
 {
 	public float walkingSpeed = 1.0f;
 	private Rigidbody2D aiRigidBody;
+    private int hitsTaken;
     //FieldOfView myScript;
     //Collider2D player;
 
@@ -13,6 +14,7 @@ public class AIController : MonoBehaviour
     void Awake ()
 	{
 		aiRigidBody = GetComponent<Rigidbody2D>();
+        hitsTaken = 0;
         //myScript = GetComponent<FieldOfView>();
         //player = FindObjectOfType<TrailRendererWithCollider>();
     }
@@ -34,6 +36,15 @@ public class AIController : MonoBehaviour
         if(collision.GetComponent<Collider2D>().name == "Fart")
         {
             Debug.Log("What smell is this?");
+            hitsTaken++;
+
+            if (hitsTaken == GameManager.instance.numberOfHits)
+            {
+                Debug.Log("NPC Destroyed!");
+                
+                Destroy(this.gameObject);
+            }
+            ScoreScript.scoreValue += 1;
         }
     }
 

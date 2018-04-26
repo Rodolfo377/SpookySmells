@@ -24,6 +24,8 @@ public class TrailRendererWithCollider : MonoBehaviour
     public bool colliderEnabled = true;             //determines if the collider is enabled.  Changing this during runtime will have no effect.
     public bool pausing = false;                     //determines if the trail is pausing, i.e. neither creating nor destroying vertices
 
+    public bool stop;
+
     private Transform trans;                        //transform of the object this script is attached to                    
     private Mesh mesh;
     private new PolygonCollider2D gasCollider;
@@ -100,21 +102,36 @@ public class TrailRendererWithCollider : MonoBehaviour
 
     private void Update()
     {
+        
         if (!pausing)
         {
-            //set the mesh and adjust widths if vertices were added or removed
-            if (TryAddVertices() | TryRemoveVertices())
+            //If stopped farting, only remove vertices.
+            if (stop)
             {
-
-                if (widthStart != widthEnd)
+                if (TryRemoveVertices())
                 {
-                    SetVertexWidths();
-                }
+                    if (widthStart != widthEnd)
+                    {
+                        SetVertexWidths();
+                    }
 
-                SetMesh();
+                    SetMesh();
+                }
+            }
+            else
+            {             //set the mesh and adjust widths if vertices were added or removed
+                if (TryAddVertices() | TryRemoveVertices())
+                {
+
+                    if (widthStart != widthEnd)
+                    {
+                        SetVertexWidths();
+                    }
+
+                    SetMesh();
+                }
             }
 
-          
         }
     }
 
